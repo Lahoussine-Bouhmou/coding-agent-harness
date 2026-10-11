@@ -1,5 +1,6 @@
 import subprocess
 
+from context import note_read
 from skills import read_skill
 
 
@@ -14,7 +15,9 @@ def bash(command: str) -> str:
 def read_file(path: str) -> str:
     """Read a text file and return its contents."""
     with open(path, encoding="utf-8") as file:
-        return file.read()
+        content = file.read()
+    note_read(path)
+    return content
 
 
 def write_file(path: str, content: str) -> str:
