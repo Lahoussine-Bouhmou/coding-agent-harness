@@ -2,37 +2,43 @@ import json
 
 from llm import SYSTEM_PROMPT, call_llm
 from tools import TOOLS
+from ui import UI
 
 
 def main():
-    prompt = input("Enter your prompt> ")
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": prompt},
-    ]
+    ui = UI()
+    ui.banner()
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     while True:
-        message, usage = call_llm(messages)
-        messages.append(message.model_dump(exclude_none=True))
-
-        if message.content:
-            print(f"\nAgent: {message.content}\n")
-        if usage is not None:
-            print(usage)
-        if not message.tool_calls:
+        prompt = ui.ask()
+        if not prompt:
             break
+        messages.append({"role": "user", "content": prompt})
 
-        for tool_call in message.tool_calls:
-            name = tool_call.function.name
-            args = json.loads(tool_call.function.arguments)
-            print(f"\nTool: {name} {args}")
-            result = TOOLS[name](**args)
-            print(result)
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": result,
-            })
+        while True:
+            with ui.working():
+                message, usage = call_llm(messages)
+            messages.append(message.model_dump(exclude_none=True))
+            ui.usage(usage)
+
+            if message.content:
+                ui.agent(message.content)
+            if not message.tool_calls:
+                break
+
+            for tool_call in message.tool_calls:
+                name = tool_call.function.name
+                args = json.loads(tool_call.function.arguments)
+                result = TOOLS[name](**args)
+                ui.tool(name, args, result)
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": result,
+                })
+
+    ui.summary()
 
 
 if __name__ == "__main__":
