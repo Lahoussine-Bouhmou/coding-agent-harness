@@ -10,6 +10,7 @@ from tools import TOOLS, TOOL_SCHEMAS
 SYSTEM_PROMPT = (
     "You are a coding agent. Write code to solve the user's request. "
     "Use bash to inspect the workspace and read_file to read files. "
+    "Use write_file to create files and str_replace for targeted edits. "
     "Respond to the user when the task is complete. "
     f"Your current working directory is: {os.getcwd()}\n\n"
     "Skills provide instructions for specific tasks. When a skill matches the "
