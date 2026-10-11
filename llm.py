@@ -1,6 +1,32 @@
+import json
 import os
+import subprocess
 
 from openai import OpenAI
+
+
+BASH_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "bash",
+        "description": "Run a shell command and return its output.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "The shell command to run",
+                },
+            },
+            "required": ["command"],
+        },
+    },
+}
+
+
+def bash(command):
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    return result.stdout + result.stderr
 
 
 def main():
@@ -10,13 +36,24 @@ def main():
     )
     prompt = input("Enter your prompt> ")
     response = client.chat.completions.create(
-        model=os.environ.get("MODEL", "openrouter/free"),
+        model=os.environ.get("MODEL", "deepseek/deepseek-v4-flash"),
         messages=[
-            {"role": "system", "content": "You are a coding agent. Write code to solve the user's request."},
+            {
+                "role": "system",
+                "content": "You are a coding agent. Write code to solve the user's request. Use the bash tool to inspect files.",
+            },
             {"role": "user", "content": prompt},
         ],
+        tools=[BASH_TOOL],
     )
-    print(f"\nAgent: {response.choices[0].message.content}\n")
+    message = response.choices[0].message
+    if message.content:
+        print(f"\nAgent: {message.content}\n")
+    if message.tool_calls:
+        tool_call = message.tool_calls[0]
+        command = json.loads(tool_call.function.arguments)["command"]
+        print(f"\nTool: bash {command}")
+        print(bash(command))
     if response.usage is not None:
         usage = response.usage
         print({
