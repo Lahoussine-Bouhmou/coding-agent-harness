@@ -3,6 +3,7 @@ import os
 
 from openai import OpenAI
 
+from skills import skills_prompt
 from tools import TOOLS, TOOL_SCHEMAS
 
 
@@ -10,7 +11,10 @@ SYSTEM_PROMPT = (
     "You are a coding agent. Write code to solve the user's request. "
     "Use bash to inspect the workspace and read_file to read files. "
     "Respond to the user when the task is complete. "
-    f"Your current working directory is: {os.getcwd()}"
+    f"Your current working directory is: {os.getcwd()}\n\n"
+    "Skills provide instructions for specific tasks. When a skill matches the "
+    "user's request, call read_skill first and follow its instructions.\n\n"
+    f"Available skills:\n{skills_prompt()}"
 )
 
 
