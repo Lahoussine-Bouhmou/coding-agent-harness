@@ -1,32 +1,9 @@
 import json
 import os
-import subprocess
 
 from openai import OpenAI
 
-
-BASH_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "bash",
-        "description": "Run a shell command and return its output.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "command": {
-                    "type": "string",
-                    "description": "The shell command to run",
-                },
-            },
-            "required": ["command"],
-        },
-    },
-}
-
-
-def bash(command):
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    return result.stdout + result.stderr
+from tools import TOOLS, TOOL_SCHEMAS
 
 
 def main():
@@ -44,16 +21,17 @@ def main():
             },
             {"role": "user", "content": prompt},
         ],
-        tools=[BASH_TOOL],
+        tools=TOOL_SCHEMAS,
     )
     message = response.choices[0].message
     if message.content:
         print(f"\nAgent: {message.content}\n")
     if message.tool_calls:
         tool_call = message.tool_calls[0]
-        command = json.loads(tool_call.function.arguments)["command"]
-        print(f"\nTool: bash {command}")
-        print(bash(command))
+        name = tool_call.function.name
+        args = json.loads(tool_call.function.arguments)
+        print(f"\nTool: {name} {args}")
+        print(TOOLS[name](**args))
     if response.usage is not None:
         usage = response.usage
         print({
