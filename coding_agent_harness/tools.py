@@ -1,7 +1,7 @@
 import subprocess
 
-from context import note_read
-from skills import read_skill
+from .context import note_read
+from .skills import read_skill
 
 
 def bash(command: str) -> str:

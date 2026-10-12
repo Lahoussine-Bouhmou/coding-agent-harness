@@ -1,4 +1,4 @@
-import session
+from . import session
 
 
 COMMANDS = {
@@ -42,6 +42,7 @@ def sessions(messages, ui):
         return messages
     messages = session.open_session(saved[choice]["id"])
     ui.resumed(messages)
+    ui.replay(messages)
     return messages
 
 

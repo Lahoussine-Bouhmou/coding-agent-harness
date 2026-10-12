@@ -1,13 +1,13 @@
 import argparse
 import json
 
-import commands
-import session
+from . import commands
+from . import session
 
-from context import reminder
-from llm import SYSTEM_PROMPT, call_llm
-from tools import TOOLS
-from ui import UI
+from .context import reminder
+from .llm import SYSTEM_PROMPT, call_llm
+from .tools import TOOLS
+from .ui import UI
 
 
 def main(argv=None):
@@ -23,6 +23,7 @@ def main(argv=None):
         if saved:
             messages = session.open_session(saved[0]["id"])
             ui.resumed(messages)
+            ui.replay(messages)
         else:
             ui.note("No saved conversations yet. Starting a new session.")
 

@@ -1,12 +1,10 @@
 import json
 import os
-from pathlib import Path
-
-from dotenv import load_dotenv
 from openai import OpenAI
 
-from skills import skills_prompt
-from tools import TOOLS, TOOL_SCHEMAS
+from .config import load_settings
+from .skills import skills_prompt
+from .tools import TOOLS, TOOL_SCHEMAS
 
 
 SYSTEM_PROMPT = (
@@ -22,19 +20,13 @@ SYSTEM_PROMPT = (
 
 
 def call_llm(messages):
-    load_dotenv(Path(__file__).resolve().parent / ".env", override=False)
-    missing = [name for name in ("API_KEY", "BASE_URL") if not os.environ.get(name)]
-    if missing:
-        raise SystemExit(
-            f"Missing configuration: {', '.join(missing)}. "
-            "Copy .env.example to .env and fill in your settings."
-        )
+    settings = load_settings()
     client = OpenAI(
-        api_key=os.environ["API_KEY"],
-        base_url=os.environ["BASE_URL"],
+        api_key=settings["api_key"],
+        base_url=settings["base_url"],
     )
     response = client.chat.completions.create(
-        model=os.environ.get("MODEL", "deepseek/deepseek-v4-flash"),
+        model=settings["model"],
         messages=messages,
         tools=TOOL_SCHEMAS,
     )

@@ -27,6 +27,24 @@ class UI:
         turns = sum(message["role"] == "user" for message in messages)
         self.note(f"Resumed {len(messages)} messages · {turns} turns")
 
+    def replay(self, messages):
+        results = {
+            message["tool_call_id"]: message["content"]
+            for message in messages if message["role"] == "tool"
+        }
+        for message in messages:
+            if message["role"] == "user":
+                self.console.print(Text(f"\n> {message['content']}", style="bold green"))
+            elif message["role"] == "assistant":
+                if message.get("content"):
+                    self.agent(message["content"])
+                for call in message.get("tool_calls") or []:
+                    self.tool(
+                        call["function"]["name"],
+                        json.loads(call["function"]["arguments"]),
+                        results.get(call["id"], ""),
+                    )
+
     def pick(self, title, rows):
         self.console.print(Text(title, style="bold blue"))
         for index, row in enumerate(rows):
