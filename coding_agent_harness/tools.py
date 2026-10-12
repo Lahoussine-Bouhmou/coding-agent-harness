@@ -1,4 +1,4 @@
-import subprocess
+from . import sandbox
 
 from .context import note_read
 from .skills import read_skill
@@ -7,9 +7,7 @@ from .plan import PLAN_SCHEMA, write_plan
 
 def bash(command: str) -> str:
     """Run a shell command and return its combined stdout and stderr."""
-    result = subprocess.run(
-        command, shell=True, capture_output=True, text=True, timeout=60
-    )
+    result = sandbox.run(command)
     return (result.stdout + result.stderr) or "(no output)"
 
 

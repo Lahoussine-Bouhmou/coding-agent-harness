@@ -16,9 +16,12 @@ class UI:
         self.console = Console()
         self.totals = {}
 
-    def banner(self):
+    def banner(self, sandbox_name="none"):
         self.console.rule("Coding Agent Harness", style="blue")
         self.console.print("/sessions · /rewind · Ctrl-D or an empty prompt to exit", style="dim")
+        self.note(f"Sandbox: {sandbox_name}")
+        if sandbox_name == "none":
+            self.note("Shell commands are unsandboxed; permission checks still apply.")
 
     def note(self, text):
         self.console.print(Text(text, style="dim"))

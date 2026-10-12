@@ -3,6 +3,7 @@ import json
 
 from . import commands
 from . import session
+from . import sandbox
 
 from .context import reminder
 from .llm import SYSTEM_PROMPT, call_llm
@@ -17,7 +18,7 @@ def main(argv=None):
     parser.add_argument("--debug", action="store_true", help="show raw model responses")
     cli = parser.parse_args(argv)
     ui = UI()
-    ui.banner()
+    ui.banner(sandbox.name())
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     if cli.resume:
         saved = session.all_sessions()
