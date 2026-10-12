@@ -1,6 +1,7 @@
 import json
 
 from rich.console import Console, Group
+from rich.json import JSON
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
@@ -17,7 +18,33 @@ class UI:
 
     def banner(self):
         self.console.rule("Coding Agent Harness", style="blue")
-        self.console.print("Ctrl-D or an empty prompt to exit", style="dim")
+        self.console.print("/sessions · /rewind · Ctrl-D or an empty prompt to exit", style="dim")
+
+    def note(self, text):
+        self.console.print(Text(text, style="dim"))
+
+    def resumed(self, messages):
+        turns = sum(message["role"] == "user" for message in messages)
+        self.note(f"Resumed {len(messages)} messages · {turns} turns")
+
+    def pick(self, title, rows):
+        self.console.print(Text(title, style="bold blue"))
+        for index, row in enumerate(rows):
+            self.console.print(Text(f"{index:>3}  {row}"))
+        try:
+            answer = self.console.input("Number (empty to cancel)> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            self.console.print()
+            return None
+        if answer.isdigit() and int(answer) < len(rows):
+            return int(answer)
+        return None
+
+    def injection(self, text):
+        self.console.print(Panel(Text(text, style="dim"), title="Environment context", border_style="dim"))
+
+    def debug(self, data):
+        self.console.print(Panel(JSON.from_data(data), title="Raw response", border_style="yellow"))
 
     def ask(self):
         try:
