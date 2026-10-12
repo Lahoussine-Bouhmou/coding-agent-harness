@@ -4,7 +4,9 @@ from openai import OpenAI
 
 from .config import load_settings
 from .skills import skills_prompt
-from .tools import TOOLS, TOOL_SCHEMAS
+from .permissions import execute
+from .tools import TOOL_SCHEMAS
+from .ui import UI
 
 
 SYSTEM_PROMPT = (
@@ -61,7 +63,7 @@ def main():
         name = tool_call.function.name
         args = json.loads(tool_call.function.arguments)
         print(f"\nTool: {name} {args}")
-        print(TOOLS[name](**args))
+        print(execute(name, args, UI()))
     if usage is not None:
         print(usage)
 

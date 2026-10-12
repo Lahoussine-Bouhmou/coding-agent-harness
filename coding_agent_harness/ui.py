@@ -23,6 +23,15 @@ class UI:
     def note(self, text):
         self.console.print(Text(text, style="dim"))
 
+    def approve(self, reason):
+        self.console.print(Text(reason, style="bold yellow"))
+        try:
+            answer = self.console.input("Allow? (y/n)> ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            self.console.print()
+            return False
+        return answer in ("y", "yes")
+
     def resumed(self, messages):
         turns = sum(message["role"] == "user" for message in messages)
         self.note(f"Resumed {len(messages)} messages · {turns} turns")
