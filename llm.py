@@ -1,6 +1,8 @@
 import json
 import os
+from pathlib import Path
 
+from dotenv import load_dotenv
 from openai import OpenAI
 
 from skills import skills_prompt
@@ -20,6 +22,13 @@ SYSTEM_PROMPT = (
 
 
 def call_llm(messages):
+    load_dotenv(Path(__file__).resolve().parent / ".env", override=False)
+    missing = [name for name in ("API_KEY", "BASE_URL") if not os.environ.get(name)]
+    if missing:
+        raise SystemExit(
+            f"Missing configuration: {', '.join(missing)}. "
+            "Copy .env.example to .env and fill in your settings."
+        )
     client = OpenAI(
         api_key=os.environ["API_KEY"],
         base_url=os.environ["BASE_URL"],
