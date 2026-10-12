@@ -2,6 +2,7 @@ import subprocess
 
 from .context import note_read
 from .skills import read_skill
+from .plan import PLAN_SCHEMA, write_plan
 
 
 def bash(command: str) -> str:
@@ -137,6 +138,7 @@ TOOL_SCHEMAS = [
             },
         },
     },
+    PLAN_SCHEMA,
 ]
 
 TOOLS = {
@@ -145,4 +147,5 @@ TOOLS = {
     "read_skill": read_skill,
     "write_file": write_file,
     "str_replace": str_replace,
+    "write_plan": write_plan,
 }

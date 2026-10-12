@@ -2,6 +2,8 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from .plan import plan_prompt
+
 
 SEEN = {}
 
@@ -49,6 +51,11 @@ def git_branch():
     return result.stdout.strip() or "(detached)"
 
 
+def plan_note():
+    plan = plan_prompt()
+    return f"\n<plan>\n{plan}\n</plan>" if plan else ""
+
+
 def reminder():
     """Build fresh environment context for the end of a model request."""
     return {
@@ -57,6 +64,6 @@ def reminder():
             "<env>\n"
             f"time: {datetime.now().astimezone():%Y-%m-%d %H:%M %z}\n"
             f"git branch: {git_branch()}\n"
-            "</env>" + stale_note()
+            "</env>" + plan_note() + stale_note()
         ),
     }

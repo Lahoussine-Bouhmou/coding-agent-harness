@@ -71,8 +71,8 @@ class UI:
             self.console.print()
             return ""
 
-    def working(self):
-        return self.console.status("Thinking…", spinner="dots")
+    def working(self, label="Thinking…"):
+        return self.console.status(Text(label), spinner="dots")
 
     def agent(self, text):
         self.console.print()
