@@ -4,6 +4,7 @@ from rich.console import Console, Group
 from rich.json import JSON
 from rich.markdown import Markdown
 from rich.panel import Panel
+from rich.padding import Padding
 from rich.table import Table
 from rich.text import Text
 
@@ -98,7 +99,7 @@ class UI:
         self.console.print("Agent", style="bold blue")
         self.console.print(Markdown(text))
 
-    def tool(self, name, args, result):
+    def tool(self, name, args, result, nested=False):
         if name == "write_plan" and args.get("steps") and result.startswith(("[ ]", "[~]", "[x]")):
             self.plan(args["steps"])
             return
@@ -110,11 +111,15 @@ class UI:
         hidden = len(lines) - MAX_TOOL_OUTPUT_LINES
         if hidden > 0:
             body.append(f"\n… {hidden} more lines", style="dim italic")
-        self.console.print(Panel(
+        panel = Panel(
             Group(Text(arguments, style="dim"), body),
             title=Text(name, style="bold yellow"),
             border_style="dim",
-        ))
+        )
+        self.console.print(Padding(panel, (0, 0, 0, 4)) if nested else panel)
+
+    def subagent(self, description):
+        self.console.print(Panel(Text(description), title="Subagent · separate conversation", border_style="blue"))
 
     def plan(self, steps):
         styles = {"pending": "dim", "in_progress": "bold blue", "done": "dim strike"}

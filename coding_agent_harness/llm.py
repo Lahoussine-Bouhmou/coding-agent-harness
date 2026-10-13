@@ -1,11 +1,9 @@
-import json
 import os
 from openai import OpenAI
 
 from .config import load_settings
 from .skills import skills_prompt
-from .permissions import execute
-from .tools import TOOL_SCHEMAS
+from .tools import TOOL_SCHEMAS, execute_tool
 from .ui import UI
 
 
@@ -13,6 +11,10 @@ SYSTEM_PROMPT = (
     "You are a coding agent. Write code to solve the user's request. "
     "Use bash to inspect the workspace and read_file to read files. "
     "Use write_file to create files and str_replace for targeted edits. "
+    "Use task for focused codebase exploration, such as locating a feature or "
+    "tracing data flow. The subagent has its own conversation; give it a "
+    "self-contained question and starting paths. Only its findings return. "
+    "Perform file edits yourself. "
     "Large tool outputs are capped and include a temporary file path to the full "
     "output. Read sections with head, tail, sed, or grep during the current turn. "
     "The temporary file is removed when the turn ends; rerun the command later if needed. "
@@ -30,7 +32,7 @@ SYSTEM_PROMPT = (
 )
 
 
-def call_llm(messages):
+def call_llm(messages, tools=None):
     settings = load_settings()
     client = OpenAI(
         api_key=settings["api_key"],
@@ -39,7 +41,7 @@ def call_llm(messages):
     response = client.chat.completions.create(
         model=settings["model"],
         messages=messages,
-        tools=TOOL_SCHEMAS,
+        tools=TOOL_SCHEMAS if tools is None else tools,
     )
     usage = None
     if response.usage is not None:
@@ -64,9 +66,9 @@ def main():
     if message.tool_calls:
         tool_call = message.tool_calls[0]
         name = tool_call.function.name
-        args = json.loads(tool_call.function.arguments)
+        args, result = execute_tool(tool_call, UI())
         print(f"\nTool: {name} {args}")
-        print(execute(name, args, UI()))
+        print(result)
     if usage is not None:
         print(usage)
 

@@ -1,5 +1,4 @@
 import argparse
-import json
 
 from . import commands
 from . import session
@@ -10,7 +9,7 @@ from . import history
 from .context import reminder
 from .llm import SYSTEM_PROMPT, call_llm
 from .plan import active_form
-from .permissions import execute
+from .tools import execute_tool
 from .ui import UI
 
 
@@ -61,8 +60,7 @@ def main(argv=None):
 
             for tool_call in message.tool_calls:
                 name = tool_call.function.name
-                args = json.loads(tool_call.function.arguments)
-                result = execute(name, args, ui)
+                args, result = execute_tool(tool_call, ui)
                 ui.tool(name, args, result)
                 messages.append({
                     "role": "tool",

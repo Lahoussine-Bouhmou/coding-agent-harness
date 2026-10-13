@@ -89,4 +89,6 @@ def execute(name, args, ui):
         return f"Blocked by policy: {reason}"
     if action == "ask" and not ui.approve(reason):
         return "The user denied this tool call."
+    if name == "task":
+        return TOOLS[name](**args, ui=ui)
     return TOOLS[name](**args)

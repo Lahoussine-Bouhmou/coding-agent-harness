@@ -16,11 +16,14 @@ SPILLS = []
 def cap(text):
     if len(text) <= CAP:
         return text
-    with tempfile.NamedTemporaryFile(
-        mode="w", encoding="utf-8", prefix="harness-output-", suffix=".txt", delete=False
-    ) as file:
-        file.write(text)
-        path = Path(file.name)
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", prefix="harness-output-", suffix=".txt", delete=False
+        ) as file:
+            file.write(text)
+            path = Path(file.name)
+    except OSError:
+        return text[:CAP] + f"\n\n{CAPPED} remaining output could not be saved to a temporary file.]"
     SPILLS.append(path)
     return (
         text[:CAP]

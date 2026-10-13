@@ -1,14 +1,21 @@
+import json
+import subprocess
+
 from . import sandbox
 from . import history
 
 from .context import note_read
 from .skills import read_skill
 from .plan import PLAN_SCHEMA, write_plan
+from .subagent import TASK_SCHEMA, task
 
 
 def bash(command: str) -> str:
     """Run a shell command and return its combined stdout and stderr."""
-    result = sandbox.run(command)
+    try:
+        result = sandbox.run(command)
+    except subprocess.TimeoutExpired as error:
+        return f"Timed out after {error.timeout}s. Narrow the command or search scope and try again."
     return history.cap((result.stdout + result.stderr) or "(no output)")
 
 
@@ -47,6 +54,31 @@ def str_replace(
         )
     write_file(path, content.replace(old_str, new_str))
     return f"Replaced {count} match(es) in {path}"
+
+
+def execute_tool(tool_call, ui, allowed=None):
+    """Validate a model tool call and return errors through the tool protocol."""
+    from .permissions import check, execute
+
+    name = tool_call.function.name
+    try:
+        args = json.loads(tool_call.function.arguments)
+    except (json.JSONDecodeError, TypeError):
+        return {}, "Error: tool arguments must be valid JSON."
+    if not isinstance(args, dict):
+        return {}, "Error: tool arguments must be a JSON object."
+    if name not in TOOLS:
+        return args, f"Error: unknown tool '{name}'. Available: {', '.join(TOOLS)}."
+    if allowed is not None and name not in allowed:
+        return args, f"Error: tool '{name}' is unavailable to this exploration subagent."
+    try:
+        if allowed is not None and name == "bash" and check(name, args)[0] != "allow":
+            return args, "Blocked: exploration subagents may only run commands allowed automatically by policy."
+        return args, execute(name, args, ui)
+    except (TypeError, KeyError) as error:
+        return args, f"Error: invalid arguments for {name}: {error}"
+    except Exception as error:
+        return args, f"Error: {name} failed ({type(error).__name__}): {error}"
 
 
 TOOL_SCHEMAS = [
@@ -140,6 +172,7 @@ TOOL_SCHEMAS = [
         },
     },
     PLAN_SCHEMA,
+    TASK_SCHEMA,
 ]
 
 TOOLS = {
@@ -149,4 +182,5 @@ TOOLS = {
     "write_file": write_file,
     "str_replace": str_replace,
     "write_plan": write_plan,
+    "task": task,
 }

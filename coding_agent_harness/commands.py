@@ -59,8 +59,12 @@ def sessions(messages, ui):
 
 
 def compact(messages, ui):
-    with ui.working("Compacting conversation…"):
-        compacted = compaction.compact(messages)
+    try:
+        with ui.working("Compacting conversation…"):
+            compacted = compaction.compact(messages)
+    except Exception as error:
+        ui.note(f"Compaction failed ({type(error).__name__}); conversation history kept.")
+        return messages
     if compacted is messages:
         ui.note("Nothing old enough to compact yet.")
         return messages
