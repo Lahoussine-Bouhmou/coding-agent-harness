@@ -7,6 +7,9 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from . import prompt
+from .plan import MARKS
+
 
 MAX_TOOL_OUTPUT_LINES = 12
 
@@ -18,7 +21,7 @@ class UI:
 
     def banner(self, sandbox_name="none"):
         self.console.rule("Coding Agent Harness", style="blue")
-        self.console.print("/sessions · /rewind · Ctrl-D or an empty prompt to exit", style="dim")
+        self.console.print("/sessions · /rewind · Alt-Enter for a newline · Ctrl-D to exit", style="dim")
         self.note(f"Sandbox: {sandbox_name}")
         if sandbox_name == "none":
             self.note("Shell commands are unsandboxed; permission checks still apply.")
@@ -29,15 +32,18 @@ class UI:
     def approve(self, reason):
         self.console.print(Text(reason, style="bold yellow"))
         try:
-            answer = self.console.input("Allow? (y/n)> ").strip().lower()
+            answer = prompt.read("Allow? (y/n)> ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             self.console.print()
             return False
         return answer in ("y", "yes")
 
-    def resumed(self, messages):
+    def clear(self):
+        self.console.clear()
+
+    def resumed(self, messages, label="Resumed"):
         turns = sum(message["role"] == "user" for message in messages)
-        self.note(f"Resumed {len(messages)} messages · {turns} turns")
+        self.note(f"{label} {len(messages)} messages · {turns} turns")
 
     def replay(self, messages):
         results = {
@@ -62,7 +68,7 @@ class UI:
         for index, row in enumerate(rows):
             self.console.print(Text(f"{index:>3}  {row}"))
         try:
-            answer = self.console.input("Number (empty to cancel)> ").strip()
+            answer = prompt.read("Number (empty to cancel)> ").strip()
         except (EOFError, KeyboardInterrupt):
             self.console.print()
             return None
@@ -78,7 +84,8 @@ class UI:
 
     def ask(self):
         try:
-            return self.console.input("\n[bold green]>[/] ").strip()
+            self.console.print()
+            return prompt.read("> ").strip()
         except (EOFError, KeyboardInterrupt):
             self.console.print()
             return ""
@@ -92,6 +99,9 @@ class UI:
         self.console.print(Markdown(text))
 
     def tool(self, name, args, result):
+        if name == "write_plan" and args.get("steps") and result.startswith(("[ ]", "[~]", "[x]")):
+            self.plan(args["steps"])
+            return
         arguments = (
             str(next(iter(args.values()))) if len(args) == 1 else json.dumps(args)
         )
@@ -105,6 +115,20 @@ class UI:
             title=Text(name, style="bold yellow"),
             border_style="dim",
         ))
+
+    def plan(self, steps):
+        styles = {"pending": "dim", "in_progress": "bold blue", "done": "dim strike"}
+        rows = Table.grid(padding=(0, 1))
+        rows.add_column(no_wrap=True)
+        rows.add_column(overflow="fold")
+        for step in steps:
+            status = step["status"]
+            rows.add_row(
+                Text(MARKS[status], style=styles[status]),
+                Text(step["content"], style=styles[status]),
+            )
+        done = sum(step["status"] == "done" for step in steps)
+        self.console.print(Panel(rows, title=f"Plan {done}/{len(steps)}", border_style="blue"))
 
     def usage(self, stats):
         if stats is None:

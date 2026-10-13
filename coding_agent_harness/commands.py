@@ -1,4 +1,5 @@
 from . import session
+from . import sandbox
 
 
 COMMANDS = {
@@ -9,6 +10,14 @@ COMMANDS = {
 
 def preview(message):
     return " ".join(str(message.get("content") or "").split())[:70]
+
+
+def redraw(messages, ui, label):
+    ui.clear()
+    ui.banner(sandbox.name())
+    ui.resumed(messages, label)
+    ui.replay(messages)
+    return messages
 
 
 def rewind(messages, ui):
@@ -28,8 +37,9 @@ def rewind(messages, ui):
     count = points[choice]
     session.save(messages)
     session.rewind_to(count)
+    messages = redraw(messages[:count], ui, "Rewound")
     ui.note("Conversation rewound. Files and executed commands are unchanged.")
-    return messages[:count]
+    return messages
 
 
 def sessions(messages, ui):
@@ -41,9 +51,7 @@ def sessions(messages, ui):
     if choice is None:
         return messages
     messages = session.open_session(saved[choice]["id"])
-    ui.resumed(messages)
-    ui.replay(messages)
-    return messages
+    return redraw(messages, ui, "Opened")
 
 
 def handle(command, messages, ui):
