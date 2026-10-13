@@ -1,10 +1,13 @@
 from . import session
 from . import sandbox
+from . import compact as compaction
+from . import history
 
 
 COMMANDS = {
     "/rewind": "return to an earlier completed turn (conversation only)",
     "/sessions": "open a saved conversation",
+    "/compact": "summarize older history to free context space",
 }
 
 
@@ -51,10 +54,25 @@ def sessions(messages, ui):
     if choice is None:
         return messages
     messages = session.open_session(saved[choice]["id"])
+    history.strip(messages)
     return redraw(messages, ui, "Opened")
 
 
+def compact(messages, ui):
+    with ui.working("Compacting conversation…"):
+        compacted = compaction.compact(messages)
+    if compacted is messages:
+        ui.note("Nothing old enough to compact yet.")
+        return messages
+    session.save(messages)
+    session.compacted(compacted)
+    ui.compacted(len(messages), compacted)
+    return compacted
+
+
 def handle(command, messages, ui):
+    if command == "/compact":
+        return compact(messages, ui)
     if command == "/rewind":
         return rewind(messages, ui)
     if command == "/sessions":

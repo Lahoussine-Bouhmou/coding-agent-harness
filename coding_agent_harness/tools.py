@@ -1,4 +1,5 @@
 from . import sandbox
+from . import history
 
 from .context import note_read
 from .skills import read_skill
@@ -8,7 +9,7 @@ from .plan import PLAN_SCHEMA, write_plan
 def bash(command: str) -> str:
     """Run a shell command and return its combined stdout and stderr."""
     result = sandbox.run(command)
-    return (result.stdout + result.stderr) or "(no output)"
+    return history.cap((result.stdout + result.stderr) or "(no output)")
 
 
 def read_file(path: str) -> str:
@@ -16,7 +17,7 @@ def read_file(path: str) -> str:
     with open(path, encoding="utf-8") as file:
         content = file.read()
     note_read(path)
-    return content
+    return history.cap(content)
 
 
 def write_file(path: str, content: str) -> str:
@@ -32,7 +33,9 @@ def str_replace(
     """Replace exact text, requiring a unique match unless explicitly allowed."""
     if not old_str:
         return "Error: old_str must not be empty"
-    content = read_file(path)
+    with open(path, encoding="utf-8") as file:
+        content = file.read()
+    note_read(path)
     count = content.count(old_str)
     if count == 0:
         return f"Error: old_str was not found in {path}"

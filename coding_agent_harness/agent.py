@@ -4,6 +4,8 @@ import json
 from . import commands
 from . import session
 from . import sandbox
+from . import compact
+from . import history
 
 from .context import reminder
 from .llm import SYSTEM_PROMPT, call_llm
@@ -24,6 +26,7 @@ def main(argv=None):
         saved = session.all_sessions()
         if saved:
             messages = session.open_session(saved[0]["id"])
+            history.strip(messages)
             ui.resumed(messages)
             ui.replay(messages)
         else:
@@ -41,6 +44,8 @@ def main(argv=None):
         while True:
             injection = reminder()
             ui.injection(injection["content"])
+            if history.fit(messages, [injection]):
+                ui.note("Dropped older tool output to fit the context budget.")
             with ui.working(active_form()):
                 message, usage = call_llm(messages + [injection])
             messages.append(message.model_dump(exclude_none=True))
@@ -65,6 +70,11 @@ def main(argv=None):
                     "content": result,
                 })
             session.save(messages)
+
+        history.sweep()
+        history.strip(messages)
+        if compact.needed(usage):
+            messages = commands.compact(messages, ui)
 
     ui.summary()
 

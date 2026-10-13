@@ -32,12 +32,22 @@ def rewind_to(count):
     WRITTEN = count
 
 
+def compacted(messages):
+    global WRITTEN
+    SESSION_DIR.mkdir(parents=True, exist_ok=True)
+    with path_for(CURRENT).open("a", encoding="utf-8") as file:
+        file.write(json.dumps({"compacted": messages}, ensure_ascii=False) + "\n")
+    WRITTEN = len(messages)
+
+
 def load(session_id):
     messages = []
     for line in path_for(session_id).read_text(encoding="utf-8").splitlines():
         entry = json.loads(line)
         if "rewind_to" in entry:
             del messages[entry["rewind_to"]:]
+        elif "compacted" in entry:
+            messages = list(entry["compacted"])
         else:
             messages.append(entry)
     return messages

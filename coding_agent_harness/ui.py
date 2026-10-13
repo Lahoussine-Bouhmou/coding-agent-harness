@@ -21,7 +21,7 @@ class UI:
 
     def banner(self, sandbox_name="none"):
         self.console.rule("Coding Agent Harness", style="blue")
-        self.console.print("/sessions · /rewind · Alt-Enter for a newline · Ctrl-D to exit", style="dim")
+        self.console.print("/sessions · /rewind · /compact · Alt-Enter for a newline · Ctrl-D to exit", style="dim")
         self.note(f"Sandbox: {sandbox_name}")
         if sandbox_name == "none":
             self.note("Shell commands are unsandboxed; permission checks still apply.")
@@ -151,3 +151,14 @@ class UI:
         for key, value in self.totals.items():
             table.add_row(key.replace("_", " "), f"{value:,}")
         self.console.print(table)
+
+    def compacted(self, before, messages):
+        summary = next(
+            message["content"] for message in reversed(messages)
+            if (message.get("content") or "").startswith("<summary>")
+        )
+        self.console.print(Panel(
+            Markdown(summary.removeprefix("<summary>").removesuffix("</summary>")),
+            title=f"Compacted · {before} → {len(messages)} messages",
+            border_style="blue",
+        ))
